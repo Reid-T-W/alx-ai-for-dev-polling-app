@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import toast from "react-hot-toast"
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -14,18 +17,37 @@ export function RegisterForm() {
     confirmPassword: ""
   })
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
+
     setIsLoading(true)
     
-    // TODO: Implement registration logic
-    console.log("Registration attempt:", formData)
-    
-    // Simulate API call
-    setTimeout(() => {
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          full_name: formData.name,
+        },
+      },
+    })
+
+    if (error) {
+      toast.error(error.message)
       setIsLoading(false)
-    }, 1000)
+      return
+    }
+
+    toast.success("Registration successful! Please check your email to verify your account.")
+    router.push("/")
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

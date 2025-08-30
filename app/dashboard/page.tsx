@@ -1,29 +1,58 @@
+"use client"
+
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PollCard } from "@/components/polls/PollCard"
 import { Plus, BarChart3, Users, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import { Poll } from "@/types"
+import withAuth from '@/hocs/withAuth'
+import { useAuth } from '@/contexts/AuthContext'
+import { Poll, PollStats } from '@/types'
+import toast from 'react-hot-toast'
 
-// Sample data for demonstration
-const userPolls: Poll[] = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description: "Let's see what the community prefers for development",
-    options: [
-      { id: "1", text: "JavaScript", votes: 45, percentage: 45 },
-      { id: "2", text: "Python", votes: 35, percentage: 35 },
-      { id: "3", text: "TypeScript", votes: 20, percentage: 20 }
-    ],
-    createdBy: "You",
-    createdAt: new Date("2024-01-15"),
-    isActive: true,
-    totalVotes: 100
+function DashboardPage() {
+  const { user, session } = useAuth()
+  const [userPolls, setUserPolls] = useState<Poll[]>([])
+  const [stats, setStats] = useState<PollStats>({ totalPolls: 0, totalVotes: 0, activePolls: 0, averageVotesPerPoll: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (session && user) {
+      console.log('Fetching dashboard data for user:', user.email)
+      const fetchData = async () => {
+        setLoading(true)
+        try {
+          const response = await fetch('/api/dashboard')
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to fetch dashboard data')
+          }
+          const data = await response.json()
+          setUserPolls(data.polls || [])
+          setStats(data.stats || { totalPolls: 0, totalVotes: 0, activePolls: 0, averageVotesPerPoll: 0 })
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error)
+          toast.error(error instanceof Error ? error.message : 'Failed to load dashboard data')
+        } finally {
+          setLoading(false)
+        }
+      }
+      fetchData()
+    }
+  }, [session, user])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
-]
 
-export default function DashboardPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -39,9 +68,9 @@ export default function DashboardPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{stats.totalPolls}</div>
             <p className="text-xs text-muted-foreground">
-              +2 from last month
+              {stats.totalPolls > 0 ? `${Math.round(stats.averageVotesPerPoll)} avg votes per poll` : 'No polls yet'}
             </p>
           </CardContent>
         </Card>
@@ -52,9 +81,9 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
+            <div className="text-2xl font-bold">{stats.totalVotes}</div>
             <p className="text-xs text-muted-foreground">
-              +180 from last month
+              Across all your polls
             </p>
           </CardContent>
         </Card>
@@ -65,9 +94,9 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{stats.activePolls}</div>
             <p className="text-xs text-muted-foreground">
-              3 expiring soon
+              Currently accepting votes
             </p>
           </CardContent>
         </Card>
@@ -97,7 +126,7 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {userPolls.map((poll) => (
+            {userPolls.slice(0, 6).map((poll) => (
               <PollCard key={poll.id} poll={poll} />
             ))}
           </div>
@@ -144,3 +173,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+export default withAuth(DashboardPage)

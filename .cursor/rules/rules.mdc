@@ -1,0 +1,87 @@
+---
+description: Core rules, conventions, and architectural guidelines for the Polling App with QR Code Sharing project.
+globs:
+alwaysApply: true
+---
+
+## Project Overview: Polling App with QR Code Sharing
+You are an expert full-stack developer working on the Polling App codebase. Your primary goal is to build a web application that allows users to register, create polls, and share them via unique links and QR codes for others to vote on.
+
+Adhere strictly to the rules, patterns, and conventions outlined in this document to ensure code quality, consistency, and maintainability.
+
+## Technology Stack
+The project uses the following technologies. Do not introduce new libraries or frameworks without explicit instruction.
+
+- Language: TypeScript
+- Main Framework: Next.js (App Router)
+- Database & Auth: Supabase
+- Styling: Tailwind CSS with shadcn/ui components
+- State Management: Primarily Server Components for server state. Use useState or useReducer for local component state in Client Components.
+- API Communication: Use Next.js Server Actions for mutations (creating polls, voting). Fetch data in Server Components using the Supabase client.
+- Utility Libraries: A library like qrcode.react for generating QR codes.
+
+
+### 1. Architecture & File Structure
+*   **Next.js App Router:** Always adhere to the standard Next.js App Router directory structure.
+    *   `/app`: For all route segments, pages, and layouts.
+    *   `/components/ui`: Reserved exclusively for `shadcn/ui` components (e.g., `button.tsx`, `input.tsx`, `card.tsx`). Do not place custom components here.
+    *   `/components`: For custom, reusable React components specific to this application (e.g., `LoginForm.tsx`, `Navigation.tsx`).
+    *   `/lib`: For Supabase client initialization, utility functions (e.g., `supabase/client.ts`), and Server Actions.
+    *   `/contexts`: For React Context providers, like `AuthContext.tsx`.
+    *   `/hocs`: For Higher-Order Components, like `withAuth.tsx`.
+
+#### 2. Component Design & Rendering
+*   **Server Components First:** Prefer Server Components for fetching and displaying data.
+*   **Client Components for Interactivity:** Use Client Components (`"use client"`) *only* when interactivity (e.g., `useState`, `useEffect`, event listeners) is required.
+*   **Minimal Client-Side JavaScript:** Strive to keep client-side JavaScript minimal.
+
+#### 3. Data Management & API Communication
+*   **Supabase for All DB/Auth:** All database interactions and authentication logic *must* be handled using the Supabase client.
+*   **Server Actions for Mutations:** For data mutations (e.g., creating polls, submitting votes, login forms), always use Next.js Server Actions. Avoid creating separate API route handlers and fetching data from the client side for mutations.
+*   **Server-Side Data Fetching:** Fetch data directly in Server Components using the Supabase client. Avoid client-side data fetching with `useEffect` and `useState` in page components for initial data loads.
+*   **Storing-poll-data:** All pole data should be stored in supabase database, no data should be stored in dictionaries.
+
+#### 4. Naming Conventions
+*   **Components:** Component files and component names should be in `PascalCase` (e.g., `CreatePollForm.tsx`, `LoginForm.tsx`).
+*   **Functions:** Utility and action functions should be in `camelCase` (e.g., `submitVote.ts`, `createClient.ts`).
+*   **Variables/Constants:** Use `camelCase`.
+
+#### 5. Error Handling
+*   **Server-Side Error Handling:** Implement `try/catch` blocks within Server Actions and Route Handlers for robust error management.
+*   **Next.js Error Boundaries:** Utilize `error.tsx` files within route segments for handling UI-level errors gracefully.
+
+#### 6. Security & Environment Variables
+*   **No Hardcoded Secrets:** Never hardcode API keys, database credentials, or any other sensitive information.
+*   **Environment Variables:** Use `.env.local` for environment variables.
+    *   Supabase URL: `process.env.NEXT_PUBLIC_SUPABASE_URL`
+    *   Supabase Anon Key: `process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY` (for client-side access)
+    *   Supabase Service Role Key: `process.env.SUPABASE_SECRET_KEY` (for server-side/middleware access)
+
+#### 7. Styling
+*   **Tailwind CSS & shadcn/ui:** Use Tailwind CSS for utility-first styling and `shadcn/ui` components for pre-built, accessible UI elements. Avoid introducing other styling libraries or custom CSS files unless absolutely necessary and approved.
+<!-- ## Architecture & Code Style -->
+
+<!-- - Directory Structure: Follow the standard Next.js App Router structure.
+    - `/app` for routes and pages.
+    - `/components/ui` for `shadcn/ui` components.
+    - `/components/` for custom, reusable components.
+    - `/lib` for Supabase client setup, utility functions, and Server Actions.
+
+- Component Design: Prefer Server Components for fetching and displaying data. Use Client Components ('use client') only when interactivity (hooks, event listeners) is required.
+- Naming Conventions: Component files should be PascalCase (CreatePollForm.tsx). Utility and action functions should be camelCase (submitVote.ts).
+- Error Handling: Use try/catch blocks within Server Actions and Route Handlers. Use Next.js error.tsx files for handling errors within route segments.
+- API Keys & Secrets: Never hardcode secrets. Use environment variables (.env.local) for Supabase URL and keys, accessed via process.env.NEXT_PUBLIC_SUPABASE_URL and process.env.SUPABASE_SECRET_KEY.
+
+## Code Patterns to Follow
+- Use a form that calls a Server Action to handle data submission. This keeps client-side JavaScript minimal.
+- Do not create a separate API route handler and use fetch on the client side to submit form data. Use Server Actions instead.
+- Do not fetch data on the client side using useEffect and useState in a page component. Fetch data directly in a Server Component.
+
+## Verification Checklist
+Before finalizing your response, you MUST verify the following:
+
+- Does the code use the Next.js App Router and Server Components for data fetching?
+- Are Server Actions used for data mutations (forms)?
+- Is the Supabase client used for all database interactions?
+- Are shadcn/ui components used for the UI where appropriate?
+- Are Supabase keys and other secrets loaded from environment variables and not hardcoded? -->
