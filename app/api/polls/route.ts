@@ -1,65 +1,56 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+import { createPoll, getAllPolls } from '@/lib/api/polls'
 
-const createPollSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  description: z.string().optional(),
-  options: z.array(z.string().min(1, 'Option text is required').max(100, 'Option too long')).min(2, 'At least 2 options required').max(10, 'Maximum 10 options allowed'),
-  expiresAt: z.string().optional(),
-})
+export async function GET(request: NextRequest) {
+  try {
+    // Fetch real polls from Supabase
+    const polls = await getAllPolls()
+
+    return NextResponse.json({
+      polls
+    })
+  } catch (error) {
+    console.error('Error fetching polls data:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch polls data' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
-    
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
-    const validatedData = createPollSchema.parse(body)
+    const { title, description, options, expiresAt } = body
 
-    // Create poll
-    const { data: poll, error: pollError } = await supabase
-      .from('polls')
-      .insert({
-        title: validatedData.title,
-        description: validatedData.description,
-        created_by: user.id,
-        expires_at: validatedData.expiresAt ? new Date(validatedData.expiresAt).toISOString() : null,
-      })
-      .select()
-      .single()
-
-    if (pollError) throw pollError
-
-    // Create poll options
-    const optionsData = validatedData.options.map((text, index) => ({
-      poll_id: poll.id,
-      text,
-      order_index: index,
-    }))
-
-    const { error: optionsError } = await supabase
-      .from('poll_options')
-      .insert(optionsData)
-
-    if (optionsError) throw optionsError
-
-    return NextResponse.json({ pollId: poll.id })
-  } catch (error) {
-    console.error('Error creating poll:', error)
-    
-    if (error instanceof z.ZodError) {
+    // Validate required fields
+    if (!title || !options || options.length < 2) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Title and at least 2 options are required' },
         { status: 400 }
       )
     }
+
+    // Create poll data object
+    const pollData = {
+      title,
+      description,
+      options: options.filter((option: string) => option.trim() !== ''),
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+    }
     
+    // Save to Supabase using the existing createPoll function
+    const pollId = await createPoll(pollData)
+    
+    console.log('Poll created successfully:', pollId)
+
+    return NextResponse.json({
+      pollId,
+      success: true,
+      message: 'Poll created successfully'
+    })
+  } catch (error) {
+    console.error('Error creating poll:', error)
     return NextResponse.json(
       { error: 'Failed to create poll' },
       { status: 500 }

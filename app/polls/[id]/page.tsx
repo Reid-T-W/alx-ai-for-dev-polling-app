@@ -1,6 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { getPollById } from '@/lib/api/polls'
-import { notFound } from 'next/navigation'
+"use client"
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { Poll } from '@/types'
 import { PollResults } from '@/components/polls/PollResults'
 import { VoteButton } from '@/components/polls/VoteButton'
 import { QRCode } from '@/components/polls/QRCode'
@@ -10,20 +12,79 @@ import { formatDistanceToNow } from 'date-fns'
 import { Clock, Users, Share2 } from 'lucide-react'
 import Link from 'next/link'
 
-interface PollPageProps {
-  params: {
-    id: string
+// Helper function to safely convert to Date
+const safeDate = (dateValue: Date | string): Date => {
+  if (dateValue instanceof Date) {
+    return dateValue
   }
+  return new Date(dateValue)
 }
 
-export default async function PollPage({ params }: PollPageProps) {
-  const poll = await getPollById(params.id)
-  
-  if (!poll) {
-    notFound()
+export default function PollPage() {
+  const params = useParams()
+  const pollId = params.id as string
+  const [poll, setPoll] = useState<Poll | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchPoll = async () => {
+      try {
+        const response = await fetch(`/api/polls/${pollId}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Poll not found')
+          } else {
+            throw new Error('Failed to fetch poll')
+          }
+        } else {
+          const data = await response.json()
+          setPoll(data.poll)
+        }
+      } catch (error) {
+        console.error('Error fetching poll:', error)
+        setError('Failed to load poll')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (pollId) {
+      fetchPoll()
+    }
+  }, [pollId])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading poll...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const isExpired = poll.expiresAt && new Date(poll.expiresAt) < new Date()
+  if (error || !poll) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Poll Not Found</h1>
+          <p className="text-gray-600 mb-6">{error || 'The poll you are looking for does not exist.'}</p>
+          <Link href="/polls">
+            <span className="text-blue-600 hover:text-blue-800">← Back to All Polls</span>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const expiresAt = poll.expiresAt ? safeDate(poll.expiresAt) : null
+  const createdAt = safeDate(poll.createdAt)
+  
+  const isExpired = expiresAt && expiresAt < new Date()
   const isActive = poll.isActive && !isExpired
 
   return (
@@ -42,10 +103,10 @@ export default async function PollPage({ params }: PollPageProps) {
               <Badge variant={isActive ? "default" : "secondary"}>
                 {isActive ? "Active" : "Inactive"}
               </Badge>
-              {poll.expiresAt && (
+              {expiresAt && (
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <Clock className="h-4 w-4" />
-                  {isExpired ? "Expired" : formatDistanceToNow(new Date(poll.expiresAt), { addSuffix: true })}
+                  {isExpired ? "Expired" : formatDistanceToNow(expiresAt, { addSuffix: true })}
                 </div>
               )}
             </div>
@@ -57,7 +118,7 @@ export default async function PollPage({ params }: PollPageProps) {
               <span>{poll.totalVotes} total votes</span>
             </div>
             <span>•</span>
-            <span>Created {formatDistanceToNow(poll.createdAt, { addSuffix: true })}</span>
+            <span>Created {formatDistanceToNow(createdAt, { addSuffix: true })}</span>
           </div>
         </div>
 
@@ -96,11 +157,11 @@ export default async function PollPage({ params }: PollPageProps) {
           </div>
         </div>
 
-        {/* Back to Dashboard */}
+        {/* Back to Polls */}
         <div className="mt-8 text-center">
-          <Link href="/dashboard">
+          <Link href="/polls">
             <span className="text-blue-600 hover:text-blue-800 text-sm">
-              ← Back to Dashboard
+              ← Back to All Polls
             </span>
           </Link>
         </div>

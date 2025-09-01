@@ -1,6 +1,5 @@
 import { PollForm } from '@/components/polls/PollForm'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import withAuth from '@/hocs/withAuth'
 
 function CreatePollPage() {
   return (
@@ -15,4 +14,4 @@ function CreatePollPage() {
   )
 }
 
-export default withAuth(CreatePollPage)
+export default CreatePollPage

@@ -3,6 +3,29 @@ import { Poll, CreatePollData, PollStats } from '@/types'
 import { transformPoll, transformPollForInsert } from '@/lib/transformers'
 import { Tables } from '@/types'
 
+export async function getAllPolls(): Promise<Poll[]> {
+  const supabase = createClient()
+  
+  const { data, error } = await supabase
+    .from('polls')
+    .select(`
+      *,
+      poll_options (
+        id,
+        text,
+        order_index,
+        created_at,
+        votes (count)
+      )
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  
+  return (data || []).map(transformPoll)
+}
+
 export async function getPollsByUser(userId: string): Promise<Poll[]> {
   const supabase = createClient()
   
@@ -50,14 +73,13 @@ export async function getPollById(pollId: string): Promise<Poll | null> {
   return transformPoll(data)
 }
 
-export async function createPoll(pollData: CreatePollData, userId: string): Promise<string> {
+export async function createPoll(pollData: CreatePollData): Promise<string> {
   const supabase = createClient()
   
   // Insert poll
   const pollInsert = transformPollForInsert({
     title: pollData.title,
     description: pollData.description,
-    createdBy: userId,
     expiresAt: pollData.expiresAt,
   })
 
@@ -70,7 +92,7 @@ export async function createPoll(pollData: CreatePollData, userId: string): Prom
   if (pollError) throw pollError
 
   // Insert poll options
-  const optionsData: Tables<'poll_options'>['Insert'][] = pollData.options.map((text, index) => ({
+  const optionsData = pollData.options.map((text, index) => ({
     poll_id: poll.id,
     text,
     order_index: index,
@@ -85,10 +107,10 @@ export async function createPoll(pollData: CreatePollData, userId: string): Prom
   return poll.id
 }
 
-export async function getPollStats(userId: string): Promise<PollStats> {
+export async function getPollStats(userId?: string): Promise<PollStats> {
   const supabase = createClient()
   
-  const { data: polls, error } = await supabase
+  let query = supabase
     .from('polls')
     .select(`
       id,
@@ -97,7 +119,13 @@ export async function getPollStats(userId: string): Promise<PollStats> {
         votes (count)
       )
     `)
-    .eq('created_by', userId)
+  
+  // If userId is provided, filter by user, otherwise get all polls
+  if (userId) {
+    query = query.eq('created_by', userId)
+  }
+  
+  const { data: polls, error } = await query
 
   if (error) throw error
 

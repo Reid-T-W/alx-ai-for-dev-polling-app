@@ -29,7 +29,7 @@ export function transformPoll(
     id: dbPoll.id,
     title: dbPoll.title,
     description: dbPoll.description || undefined,
-    createdBy: dbPoll.created_by,
+    createdBy: 'anonymous', // Default value since field was removed
     createdAt: new Date(dbPoll.created_at),
     updatedAt: new Date(dbPoll.updated_at),
     expiresAt: dbPoll.expires_at ? new Date(dbPoll.expires_at) : undefined,
@@ -62,13 +62,11 @@ export function transformVote(dbVote: Tables<'votes'>): Vote {
 export function transformPollForInsert(poll: {
   title: string
   description?: string
-  createdBy: string
   expiresAt?: Date
 }): Tables<'polls'>['Insert'] {
   return {
     title: poll.title,
     description: poll.description || null,
-    created_by: poll.createdBy,
     expires_at: poll.expiresAt?.toISOString() || null,
   }
 }

@@ -13,8 +13,19 @@ interface PollCardProps {
   showActions?: boolean
 }
 
+// Helper function to safely convert to Date
+const safeDate = (dateValue: Date | string): Date => {
+  if (dateValue instanceof Date) {
+    return dateValue
+  }
+  return new Date(dateValue)
+}
+
 export function PollCard({ poll, showActions = true }: PollCardProps) {
-  const isExpired = poll.expiresAt && new Date(poll.expiresAt) < new Date()
+  const expiresAt = poll.expiresAt ? safeDate(poll.expiresAt) : null
+  const createdAt = safeDate(poll.createdAt)
+  
+  const isExpired = expiresAt && expiresAt < new Date()
   const isActive = poll.isActive && !isExpired
 
   return (
@@ -33,10 +44,10 @@ export function PollCard({ poll, showActions = true }: PollCardProps) {
             <Badge variant={isActive ? "default" : "secondary"}>
               {isActive ? "Active" : "Inactive"}
             </Badge>
-            {poll.expiresAt && (
+            {expiresAt && (
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <Clock className="h-3 w-3" />
-                {isExpired ? "Expired" : formatDistanceToNow(new Date(poll.expiresAt), { addSuffix: true })}
+                {isExpired ? "Expired" : formatDistanceToNow(expiresAt, { addSuffix: true })}
               </div>
             )}
           </div>
@@ -74,7 +85,7 @@ export function PollCard({ poll, showActions = true }: PollCardProps) {
             </div>
           </div>
           <div className="text-xs">
-            Created {formatDistanceToNow(poll.createdAt, { addSuffix: true })}
+            Created {formatDistanceToNow(createdAt, { addSuffix: true })}
           </div>
         </div>
 

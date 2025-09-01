@@ -6,6 +6,11 @@ import { useEffect, ComponentType } from 'react';
 
 export default function withAuth<P extends object>(WrappedComponent: ComponentType<P>) {
   const WithAuth = (props: P) => {
+    // Auth protection disabled - directly returning the wrapped component
+    return <WrappedComponent {...props} />;
+
+    // Original auth logic commented out below:
+    /*
     const { user, session, loading } = useAuth();
     const router = useRouter();
 
@@ -38,6 +43,7 @@ export default function withAuth<P extends object>(WrappedComponent: ComponentTy
     }
 
     return <WrappedComponent {...props} />;
+    */
   };
 
   return WithAuth;

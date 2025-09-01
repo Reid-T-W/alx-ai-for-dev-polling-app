@@ -4,8 +4,8 @@ export interface User {
   email: string
   name: string
   avatar?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface Poll {
@@ -14,9 +14,9 @@ export interface Poll {
   description?: string
   options: PollOption[]
   createdBy: string
-  createdAt: Date
-  updatedAt: Date
-  expiresAt?: Date
+  createdAt: Date | string
+  updatedAt: Date | string
+  expiresAt?: Date | string
   isActive: boolean
   totalVotes: number
 }
@@ -27,7 +27,7 @@ export interface PollOption {
   orderIndex: number
   votes: number
   percentage: number
-  createdAt: Date
+  createdAt: Date | string
 }
 
 export interface Vote {
@@ -37,7 +37,7 @@ export interface Vote {
   userId?: string
   ipAddress?: string
   userAgent?: string
-  createdAt: Date
+  createdAt: Date | string
 }
 
 // Input/Output types for API operations

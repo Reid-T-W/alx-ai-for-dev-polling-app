@@ -7,6 +7,11 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
+  // Auth protection disabled - returning response without authentication checks
+  return supabaseResponse
+
+  // Original auth logic commented out below:
+  /*
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -58,6 +63,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return supabaseResponse
+  */
 }
 
 export const config = {

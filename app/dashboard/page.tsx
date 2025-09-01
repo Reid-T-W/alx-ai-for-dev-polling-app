@@ -18,29 +18,31 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (session && user) {
-      console.log('Fetching dashboard data for user:', user.email)
-      const fetchData = async () => {
-        setLoading(true)
-        try {
-          const response = await fetch('/api/dashboard')
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Failed to fetch dashboard data')
-          }
-          const data = await response.json()
-          setUserPolls(data.polls || [])
-          setStats(data.stats || { totalPolls: 0, totalVotes: 0, activePolls: 0, averageVotesPerPoll: 0 })
-        } catch (error) {
-          console.error('Error fetching dashboard data:', error)
-          toast.error(error instanceof Error ? error.message : 'Failed to load dashboard data')
-        } finally {
-          setLoading(false)
+    // Load data regardless of authentication status
+    console.log('Fetching dashboard data')
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch('/api/dashboard')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to fetch dashboard data')
         }
+        const data = await response.json()
+        setUserPolls(data.polls || [])
+        setStats(data.stats || { totalPolls: 0, totalVotes: 0, activePolls: 0, averageVotesPerPoll: 0 })
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to load dashboard data')
+        // Set empty data on error
+        setUserPolls([])
+        setStats({ totalPolls: 0, totalVotes: 0, activePolls: 0, averageVotesPerPoll: 0 })
+      } finally {
+        setLoading(false)
       }
-      fetchData()
     }
-  }, [session, user])
+    fetchData()
+  }, [])
 
   if (loading) {
     return (
