@@ -6,7 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, X } from "lucide-react"
+import { createPoll } from "@/lib/api/polls"
+import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 import { CreatePollData } from "@/types"
+import { createClient } from "@/lib/supabase/client"
 
 export function CreatePollForm() {
   const [formData, setFormData] = useState<CreatePollData>({
@@ -16,18 +20,31 @@ export function CreatePollForm() {
     expiresAt: undefined
   })
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
-    // TODO: Implement create poll logic
-    console.log("Creating poll:", formData)
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const supabase = createClient()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        toast.error("You must be logged in to create a poll.")
+        setIsLoading(false)
+        return
+      }
+
+      await createPoll(formData, user.id)
+      toast.success("Poll created successfully!")
+      router.push("/polls")
+    } catch (error) {
+      console.error("Error creating poll:", error)
+      toast.error("Failed to create poll.")
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   const addOption = () => {
