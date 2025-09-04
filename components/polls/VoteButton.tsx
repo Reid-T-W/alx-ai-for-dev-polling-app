@@ -12,6 +12,7 @@ interface VoteButtonProps {
   optionText: string
   disabled?: boolean
   className?: string
+  onVoted?: () => void
 }
 
 export function VoteButton({ 
@@ -19,7 +20,8 @@ export function VoteButton({
   optionId, 
   optionText, 
   disabled = false,
-  className = ""
+  className = "",
+  onVoted
 }: VoteButtonProps) {
   const { vote, voting, error } = useVote()
   const [hasVoted, setHasVoted] = useState(false)
@@ -29,6 +31,7 @@ export function VoteButton({
       await vote(pollId, optionId)
       setHasVoted(true)
       toast.success(`Voted for "${optionText}"`)
+      onVoted?.()
     } catch (error) {
       toast.error('Failed to submit vote')
     }

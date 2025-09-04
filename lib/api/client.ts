@@ -1,6 +1,14 @@
-import { CreatePollData, UpdatePollData } from '@/types'
+import { UpdatePollData } from '@/types'
 
-export async function createPoll(pollData: CreatePollData): Promise<{ pollId: string }> {
+export type CreatePollRequest = {
+  title: string
+  description?: string
+  options: string[]
+  // datetime-local string or undefined
+  expiresAt?: string
+}
+
+export async function createPoll(pollData: CreatePollRequest): Promise<{ pollId: string }> {
   const response = await fetch('/api/polls', {
     method: 'POST',
     headers: {

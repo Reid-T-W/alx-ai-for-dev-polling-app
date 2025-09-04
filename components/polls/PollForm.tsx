@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { createPoll } from '@/lib/api/client'
+import { createPoll, type CreatePollRequest } from '@/lib/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -37,9 +37,9 @@ export function PollForm() {
     }
   })
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray<any>({
     control,
-    name: 'options',
+    name: 'options' as any,
   })
 
   const options = watch('options')
@@ -47,12 +47,13 @@ export function PollForm() {
   const onSubmit = async (data: PollFormData) => {
     setLoading(true)
     try {
-      const { pollId } = await createPoll({
+      const payload: CreatePollRequest = {
         title: data.title,
         description: data.description,
         options: data.options.filter(option => option.trim() !== ''),
         expiresAt: data.expiresAt || undefined,
-      })
+      }
+      const { pollId } = await createPoll(payload)
       toast.success('Poll created successfully!')
       router.push(`/polls/${pollId}`)
     } catch (error) {
@@ -124,8 +125,8 @@ export function PollForm() {
             </div>
             
             <div className="space-y-3">
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex gap-2">
+              {fields.map((_, index) => (
+                <div key={index} className="flex gap-2">
                   <Input
                     {...register(`options.${index}`)}
                     placeholder={`Option ${index + 1}`}

@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error submitting vote:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to submit vote' },
-      { status: 500 }
-    )
+    const message = (typeof error === 'object' && error && 'message' in (error as any))
+      ? String((error as any).message)
+      : 'Failed to submit vote'
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
 

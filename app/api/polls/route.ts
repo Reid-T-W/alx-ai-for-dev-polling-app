@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createPoll, getAllPolls } from '@/lib/api/polls'
 
 export async function GET(request: NextRequest) {
@@ -21,22 +22,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, options, expiresAt } = body
+    console.log('POST /api/polls called');
 
-    // Validate required fields
-    if (!title || !options || options.length < 2) {
+    const schema = z.object({
+      title: z.string().min(1, 'Title is required').max(200),
+      description: z.string().optional(),
+      options: z
+        .array(z.string().min(1, 'Option text is required').max(100))
+        .min(2, 'At least 2 options required')
+        .max(10, 'Maximum 10 options allowed'),
+      // Accept the raw string from <input type="datetime-local">; we'll validate at runtime
+      expiresAt: z.string().optional(),
+    })
+
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Title and at least 2 options are required' },
+        { error: 'Invalid payload', details: parsed.error.flatten() },
         { status: 400 }
       )
     }
 
-    // Create poll data object
+    const { title, description, options, expiresAt } = parsed.data
+
+    // Normalize and validate expiresAt (datetime-local string)
+    const expiresAtDate = expiresAt ? new Date(expiresAt) : undefined
+    if (expiresAt && (isNaN(expiresAtDate!.getTime()))) {
+      return NextResponse.json(
+        { error: 'Invalid expiresAt value' },
+        { status: 400 }
+      )
+    }
+
     const pollData = {
       title,
       description,
       options: options.filter((option: string) => option.trim() !== ''),
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      expiresAt: expiresAtDate,
     }
     
     // Save to Supabase using the existing createPoll function
@@ -44,11 +66,14 @@ export async function POST(request: NextRequest) {
     
     console.log('Poll created successfully:', pollId)
 
-    return NextResponse.json({
-      pollId,
-      success: true,
-      message: 'Poll created successfully'
-    })
+    return NextResponse.json(
+      {
+        pollId,
+        success: true,
+        message: 'Poll created successfully',
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error creating poll:', error)
     return NextResponse.json(

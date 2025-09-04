@@ -1,4 +1,4 @@
-import { Tables } from '@/types'
+import { Tables, Inserts } from '@/types'
 import { User, Poll, PollOption, Vote } from '@/types'
 
 // Transform database row to application model
@@ -12,18 +12,41 @@ export function transformUser(dbUser: Tables<'profiles'>): User {
     updatedAt: new Date(dbUser.updated_at),
   }
 }
+export function transformPollOption(
+  dbOption: Tables<'poll_options'> & { votes?: { count: number }[] }
+): PollOption {
+  const votesCount = dbOption.votes && dbOption.votes.length > 0
+    ? dbOption.votes[0]?.count ?? 0
+    : 0
+
+  return {
+    id: dbOption.id,
+    text: (dbOption as any).text ?? (dbOption as any).option_text,
+    orderIndex: dbOption.order_index,
+    votes: votesCount,
+    percentage: 0, // Percentage should be set in context of totalVotes in transformPoll
+    createdAt: new Date(dbOption.created_at),
+  }
+}
 
 export function transformPoll(
   dbPoll: Tables<'polls'> & {
     poll_options: (Tables<'poll_options'> & {
-      votes: { count: number }[]
+      votes?: { count: number }[]
     })[]
   }
 ): Poll {
-  const totalVotes = dbPoll.poll_options.reduce(
-    (sum, option) => sum + (option.votes[0]?.count || 0),
-    0
-  )
+  // Handle the case where poll_options may be empty or undefined
+  const pollOptions = Array.isArray(dbPoll.poll_options) ? dbPoll.poll_options : [];
+
+  // Calculate totalVotes safely, considering missing or empty votes arrays
+  const totalVotes = pollOptions.reduce((sum, option) => {
+    const votesCount =
+      Array.isArray(option.votes) && option.votes.length > 0
+        ? option.votes[0]?.count ?? 0
+        : 0;
+    return sum + votesCount;
+  }, 0);
 
   return {
     id: dbPoll.id,
@@ -35,15 +58,21 @@ export function transformPoll(
     expiresAt: dbPoll.expires_at ? new Date(dbPoll.expires_at) : undefined,
     isActive: dbPoll.is_active,
     totalVotes,
-    options: dbPoll.poll_options.map(option => ({
-      id: option.id,
-      text: option.text,
-      orderIndex: option.order_index,
-      votes: option.votes[0]?.count || 0,
-      percentage: totalVotes > 0 ? ((option.votes[0]?.count || 0) / totalVotes) * 100 : 0,
-      createdAt: new Date(option.created_at),
-    })),
-  }
+    options: pollOptions.map(option => {
+      const votesCount =
+        Array.isArray(option.votes) && option.votes.length > 0
+          ? option.votes[0]?.count ?? 0
+          : 0;
+      return {
+        id: option.id,
+        text: (option as any).text ?? (option as any).option_text,
+        orderIndex: option.order_index,
+        votes: votesCount,
+        percentage: totalVotes > 0 ? (votesCount / totalVotes) * 100 : 0,
+        createdAt: new Date(option.created_at),
+      };
+    }),
+  };
 }
 
 export function transformVote(dbVote: Tables<'votes'>): Vote {
@@ -63,7 +92,7 @@ export function transformPollForInsert(poll: {
   title: string
   description?: string
   expiresAt?: Date
-}): Tables<'polls'>['Insert'] {
+}): Inserts<'polls'> {
   return {
     title: poll.title,
     description: poll.description || null,
@@ -77,7 +106,7 @@ export function transformVoteForInsert(vote: {
   userId?: string
   ipAddress?: string
   userAgent?: string
-}): Tables<'votes'>['Insert'] {
+}): Inserts<'votes'> {
   return {
     poll_id: vote.pollId,
     option_id: vote.optionId,

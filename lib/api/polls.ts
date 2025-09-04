@@ -12,10 +12,10 @@ export async function getAllPolls(): Promise<Poll[]> {
       *,
       poll_options (
         id,
-        text,
+        option_text,
         order_index,
         created_at,
-        votes (count)
+        votes: votes ( count )
       )
     `)
     .eq('is_active', true)
@@ -35,10 +35,10 @@ export async function getPollsByUser(userId: string): Promise<Poll[]> {
       *,
       poll_options (
         id,
-        text,
+        option_text,
         order_index,
         created_at,
-        votes (count)
+        votes: votes ( count )
       )
     `)
     .eq('created_by', userId)
@@ -58,10 +58,10 @@ export async function getPollById(pollId: string): Promise<Poll | null> {
       *,
       poll_options (
         id,
-        text,
+        option_text,
         order_index,
         created_at,
-        votes (count)
+        votes: votes ( count )
       )
     `)
     .eq('id', pollId)
@@ -83,24 +83,24 @@ export async function createPoll(pollData: CreatePollData): Promise<string> {
     expiresAt: pollData.expiresAt,
   })
 
-  const { data: poll, error: pollError } = await supabase
+  const { data: poll, error: pollError } = (await supabase
     .from('polls')
-    .insert(pollInsert)
+    .insert(pollInsert as any)
     .select()
-    .single()
+    .single()) as any
 
   if (pollError) throw pollError
 
   // Insert poll options
   const optionsData = pollData.options.map((text, index) => ({
     poll_id: poll.id,
-    text,
+    option_text: text,
     order_index: index,
   }))
 
-  const { error: optionsError } = await supabase
+  const { error: optionsError } = (await supabase
     .from('poll_options')
-    .insert(optionsData)
+    .insert(optionsData as any)) as any
 
   if (optionsError) throw optionsError
 
@@ -110,32 +110,32 @@ export async function createPoll(pollData: CreatePollData): Promise<string> {
 export async function getPollStats(userId?: string): Promise<PollStats> {
   const supabase = createClient()
   
-  let query = supabase
+  const { data: polls, error } = await supabase
     .from('polls')
     .select(`
       id,
       is_active,
       poll_options (
-        votes (count)
+        id,
+        votes: votes ( count )
       )
     `)
-  
-  // If userId is provided, filter by user, otherwise get all polls
-  if (userId) {
-    query = query.eq('created_by', userId)
-  }
-  
-  const { data: polls, error } = await query
 
   if (error) throw error
 
-  const totalPolls = polls?.length || 0
-  const activePolls = polls?.filter(poll => poll.is_active).length || 0
-  const totalVotes = polls?.reduce((sum, poll) => 
-    sum + poll.poll_options.reduce((optionSum, option) => 
-      optionSum + (option.votes[0]?.count || 0), 0
-    ), 0
-  ) || 0
+  const totalPolls = Array.isArray(polls) ? polls.length : 0
+  const activePolls = Array.isArray(polls) ? polls.filter((p: any) => p.is_active).length : 0
+  const totalVotes = Array.isArray(polls)
+    ? polls.reduce((sum: number, poll: any) => {
+        const optionVotes = Array.isArray(poll.poll_options)
+          ? poll.poll_options.reduce((optSum: number, opt: any) => {
+              const count = Array.isArray(opt.votes) && opt.votes.length > 0 ? (opt.votes[0]?.count ?? 0) : 0
+              return optSum + count
+            }, 0)
+          : 0
+        return sum + optionVotes
+      }, 0)
+    : 0
   const averageVotesPerPoll = totalPolls > 0 ? totalVotes / totalPolls : 0
 
   return {
@@ -176,6 +176,20 @@ export async function updatePoll(
     })
     .eq('id', pollId)
     .eq('created_by', userId)
+
+  if (error) throw error
+}
+
+
+export async function submitVote(pollId: string, optionId: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('votes')
+    .insert({
+      // Some schemas may not have poll_id on votes; option_id is sufficient
+      option_id: optionId,
+    } as any)
 
   if (error) throw error
 }

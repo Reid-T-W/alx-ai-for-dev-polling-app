@@ -54,6 +54,16 @@ export default function PollPage() {
     }
   }, [pollId])
 
+  const refreshPoll = async () => {
+    try {
+      const response = await fetch(`/api/polls/${pollId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setPoll(data.poll)
+      }
+    } catch {}
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -137,6 +147,7 @@ export default function PollPage() {
                       pollId={poll.id}
                       optionId={option.id}
                       optionText={option.text}
+                      onVoted={refreshPoll}
                     />
                   ))
                 ) : (
