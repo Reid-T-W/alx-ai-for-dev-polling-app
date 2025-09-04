@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { Poll } from "@/types"
+import withAuth from "@/hocs/withAuth"
 
-export default function PollsPage() {
+function PollsPage() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -66,3 +67,5 @@ export default function PollsPage() {
     </div>
   )
 }
+
+export default withAuth(PollsPage)

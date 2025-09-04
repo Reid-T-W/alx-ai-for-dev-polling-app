@@ -41,6 +41,7 @@ The project uses the following technologies. Do not introduce new libraries or f
 *   **Server-Side Data Fetching:** Fetch data directly in Server Components using the Supabase client. Avoid client-side data fetching with `useEffect` and `useState` in page components for initial data loads.
 *   **Storing-poll-data:** All pole data should be stored in supabase database, no data should be stored in dictionaries.
 
+
 #### 4. Naming Conventions
 *   **Components:** Component files and component names should be in `PascalCase` (e.g., `CreatePollForm.tsx`, `LoginForm.tsx`).
 *   **Functions:** Utility and action functions should be in `camelCase` (e.g., `submitVote.ts`, `createClient.ts`).
@@ -59,6 +60,10 @@ The project uses the following technologies. Do not introduce new libraries or f
 
 #### 7. Styling
 *   **Tailwind CSS & shadcn/ui:** Use Tailwind CSS for utility-first styling and `shadcn/ui` components for pre-built, accessible UI elements. Avoid introducing other styling libraries or custom CSS files unless absolutely necessary and approved.
+
+#### 8. Work Mechanism
+Explain to me every change you are about to make, don't go long
+distances without keeping me in the loop
 <!-- ## Architecture & Code Style -->
 
 <!-- - Directory Structure: Follow the standard Next.js App Router structure.

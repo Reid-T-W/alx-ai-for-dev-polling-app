@@ -6,64 +6,8 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
-
-  // Auth protection disabled - returning response without authentication checks
+  // No route protection here; handled in withAuth on pages
   return supabaseResponse
-
-  // Original auth logic commented out below:
-  /*
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            supabaseResponse.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-
-  const { data: { session } } = await supabase.auth.getSession()
-  console.log('Middleware: Session status', session ? 'Authenticated' : 'Unauthenticated', 'User ID:', session?.user?.id)
-
-  const protectedRoutes = ['/dashboard', '/polls/create']
-  const authRoutes = ['/auth/login', '/auth/register']
-
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
-  const isAuthRoute = authRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  if (!session && isProtectedRoute) {
-    console.log('Middleware: No session for protected route, redirecting to login')
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/auth/login'
-    redirectUrl.searchParams.set(`redirectTo`, request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  if (session && isAuthRoute) {
-    console.log('Middleware: Session exists on auth route')
-    const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    if (redirectTo) {
-      console.log('Middleware: Redirecting to custom redirectTo:', redirectTo)
-      return NextResponse.redirect(new URL(redirectTo, request.url))
-    }
-    console.log('Middleware: Redirecting to root')
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  return supabaseResponse
-  */
 }
 
 export const config = {
